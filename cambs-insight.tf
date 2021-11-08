@@ -126,7 +126,6 @@ resource "tls_private_key" "_" {
 }
 
 resource "aws_key_pair" "_" {
-  key_name   = "cambs-insight"
   public_key = tls_private_key._.public_key_openssh
   tags = {
     "Application" = "Cambs-Insight"
