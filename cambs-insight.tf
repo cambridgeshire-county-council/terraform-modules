@@ -71,7 +71,8 @@ resource "aws_instance" "cambs-insight-website" {
                   EOF
   iam_instance_profile   = aws_iam_instance_profile.cambs_insight_profile.name
   tags = {
-    "Name" = "Cambs-Insight"
+    "Name" = "Cambs-Insight",
+    "Application" = "Cambs-Insight"
   }
   ebs_block_device {
     device_name = "/dev/xvda"
@@ -88,23 +89,28 @@ resource "aws_db_instance" "cambs-insight-database" {
   username               = var.db_user
   password               = var.db_password
   skip_final_snapshot    = true
+  tags = {
+    "Application" = "Cambs-Insight"
+  }
 }
 
 resource "aws_iam_policy" "cambs_insight_iam_policy" {
-  name        = "cambs_insight_iam_policy"
+  # name        = "cambs_insight_iam_policy"
   path        = "/"
   description = "Cambridgeshire Insight policy"
-
   policy = file("cambs_insight_iam_policy.json")
 }
 
 resource "aws_iam_role" "cambs_insight_iam_role" {
-  name               = "cambs_insight_iam_role"
+  # name               = "cambs_insight_iam_role"
   assume_role_policy = file("cambs_insight_role_policy.json")
+  tags = {
+    "Application" = "Cambs-Insight"
+  }
 }
 
 resource "aws_iam_instance_profile" "cambs_insight_profile" {
-  name = "cambs_insight_profile"
+  # name = "cambs_insight_profile"
   role = aws_iam_role.cambs_insight_iam_role.name
 }
 
@@ -122,13 +128,15 @@ resource "tls_private_key" "_" {
 resource "aws_key_pair" "_" {
   key_name   = "cambs-insight"
   public_key = tls_private_key._.public_key_openssh
+  tags = {
+    "Application" = "Cambs-Insight"
+  }
 }
 
 
 resource "aws_security_group" "cambs-insight-ec2-sg" {
-  name        = "cambs-insight-ec2-sg"
+  # name        = "cambs-insight-ec2-sg"
   description = "EC2 Security Group for Cambs Insight"
-
   ingress {
     from_port   = 22
     to_port     = 22
@@ -136,7 +144,6 @@ resource "aws_security_group" "cambs-insight-ec2-sg" {
     description = "Telnet"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
   ingress {
     from_port   = 80
     to_port     = 80
@@ -145,18 +152,19 @@ resource "aws_security_group" "cambs-insight-ec2-sg" {
     cidr_blocks = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
   }
-  
-
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  tags = {
+    "Application" = "Cambs-Insight"
+  }
 }
 
 resource "aws_security_group" "cambs-insight-rds-sg" {
-  name        = "cambs-insight-rds-sg"
+  # name        = "cambs-insight-rds-sg"
   description = "RDS Security Group for Cambs Insight"
 
   ingress {
@@ -173,10 +181,13 @@ resource "aws_security_group" "cambs-insight-rds-sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+    tags = {
+    "Application" = "Cambs-Insight"
+  }
 }
 
 resource "aws_security_group" "cambs-insight-lb-sg" {
-  name = "cambs-insight-lb-sg"
+  # name = "cambs-insight-lb-sg"
   description = "Load balancer group for Cambs Insight"
   ingress {
     from_port   = 80
@@ -198,19 +209,28 @@ resource "aws_security_group" "cambs-insight-lb-sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  tags = {
+    "Application" = "Cambs-Insight"
+  }
 }
 
 resource "aws_lb" "Cambs-Insight-lb" {
-  name = "Cambs-Insight"
+  # name = "Cambs-Insight"
   subnets            = ["subnet-c5e28dbf", "subnet-ae8b36e2"]
   security_groups = [ aws_security_group.cambs-insight-lb-sg.id ]
+  tags = {
+    "Application" = "Cambs-Insight"
+  }
 }
 
 resource "aws_lb_target_group" "Cambs-Insight-http-tg" {
-  name = "Cambs-Insight-http-tg"
+  # name = "Cambs-Insight-http-tg"
   port = 80
   protocol = "HTTP"
   vpc_id = "vpc-59d58c31"
+  tags = {
+    "Application" = "Cambs-Insight"
+  }
 }
 
 resource "aws_lb_target_group_attachment" "cambs-insight-tg-attachment" {
