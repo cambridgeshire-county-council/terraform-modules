@@ -13,5 +13,5 @@ steps:
 - task: CopyFiles@2
   displayName: 'Copy Terraform files to artifacts'
   inputs:
-    SourceFolder: \
+    SourceFolder: .
     TargetFolder: '$(build.artifactstagingdirectory)/Terraform'
