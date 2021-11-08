@@ -15,3 +15,7 @@ steps:
   inputs:
     SourceFolder: .
     TargetFolder: '$(build.artifactstagingdirectory)/Terraform'
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact'
+  inputs:
+    PathtoPublish: '$(build.artifactstagingdirectory)'
