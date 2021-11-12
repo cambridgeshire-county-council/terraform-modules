@@ -1,4 +1,9 @@
 terraform {
+  backend "s3" {
+    bucket = "ccc-terraform-states"
+    key    = "cambs-insight-dev/cambs-insight.tfstate"
+    region = "eu-west-2"
+  }
   required_providers {
     aws = {
       source  = "hashicorp/aws"
