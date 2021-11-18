@@ -25,9 +25,9 @@ variable "db_user" {
   type    = string
   default = "root"
 }
-variable "db_password" {
-  type    = string
-  default = "WLhSpsY88Urw2KJh"
+resource random_password "db_password" {
+  length = 16
+  special = false
 }
 
 
@@ -55,19 +55,26 @@ resource "aws_instance" "cambs-insight-website" {
                   sed -i 's/SET @@SESSION.SQL_LOG_BIN= 0;//' Dump20210223.sql
                   sed -i 's/SET @@GLOBAL.GTID_PURGED=.*//' Dump20210223.sql
                   echo Populating database
-                  mysql -h ${aws_db_instance.cambs-insight-database.address} -P 3306 -u "${var.db_user}" -p"${var.db_password}" --execute "CREATE DATABASE ${var.db_name}"
-	                mysql -h ${aws_db_instance.cambs-insight-database.address} -P 3306 -u ${var.db_user} -p"${var.db_password}" "${var.db_name}" < Dump20210223.sql
+                  mysql -h ${aws_db_instance.cambs-insight-database.address} -P 3306 -u "${var.db_user}" -p"${random_password.db_password.result}" --execute "CREATE DATABASE ${var.db_name}"
+	                mysql -h ${aws_db_instance.cambs-insight-database.address} -P 3306 -u ${var.db_user} -p"${random_password.db_password.result}" "${var.db_name}" < Dump20210223.sql
                   echo Unzipping server files
                   unzip -q data.cambridgeshireinsight.org.uk.zip -d .
                   sed -i 's/datacamb_datadb/${var.db_name}/g' data.cambridgeshireinsight.org.uk/sites/default/settings.php
                   sed -i 's/datacamb_datau/${var.db_user}/g' data.cambridgeshireinsight.org.uk/sites/default/settings.php
-                  sed -i 's/qAGU@ppnCzM7/${var.db_password}/g' data.cambridgeshireinsight.org.uk/sites/default/settings.php
+                  sed -i 's/qAGU@ppnCzM7/${random_password.db_password.result}/g' data.cambridgeshireinsight.org.uk/sites/default/settings.php
                   sed -i 's/localhost/${aws_db_instance.cambs-insight-database.address}/g' data.cambridgeshireinsight.org.uk/sites/default/settings.php
                   IP=$(curl http://169.254.169.254/latest/meta-data/public-ipv4)
                   sed -i \"s/data.cambridgeshireinsight.org.uk/$IP/g\" data.cambridgeshireinsight.org.uk/sites/default/settings.php
-                  sed -i "s/'port' => ''/'port' => '3600'/g" data.cambridgeshireinsight.org.uk/sites/default/settings.php
+                  sed -i "s/'port' => ''/'port' => '3306'/g" data.cambridgeshireinsight.org.uk/sites/default/settings.php
                   sed -i 's/short_open_tag = Off/short_open_tag = On/g' /etc/php.ini
                   sed -i '/<Directory \"\/var\/www\/html\">/,/<\/Directory>/ s/AllowOverride None/AllowOverride all/' /etc/httpd/conf/httpd.conf
+                  sed -i 's/RewriteCond %%{HTTPS} off//g' .htaccess
+                  sed -i 's/RewriteCond %%{HTTP:X-Forwarded-Proto} !https//g' data.cambridgeshireinsight.org.uk/.htaccess
+                  sed -i 's/RewriteCond %%{REQUEST_URI} !^\/\\.well-known\/acme-challenge\/\[0-9a-zA-Z_-]+\$//g' data.cambridgeshireinsight.org.uk/.htaccess
+                  sed -i 's/RewriteCond %%{REQUEST_URI} !^\/\\.well-known\/cpanel-dcv\/\[0-9a-zA-Z_-]+\$//g' data.cambridgeshireinsight.org.uk/.htaccess
+                  sed -i 's/RewriteCond %%{REQUEST_URI} !^\/\\.well-known\/pki-validation\/(?:\\ Ballot169)?//g' data.cambridgeshireinsight.org.uk/.htaccess
+                  sed -i 's/RewriteCond %%{REQUEST_URI} !^\/\\.well-known\/pki-validation\/\[A-F0-9]{32}\\.txt(?:\\ Comodo\\ DCV)?\$//g' data.cambridgeshireinsight.org.uk/.htaccess
+                  sed -i 's/RewriteRule ^(.*)\$ https:\/\/%%{HTTP_HOST}%%{REQUEST_URI} \[L,R=301]//g' data.cambridgeshireinsight.org.uk/.htaccess
                   echo Moving server files
                   mv data.cambridgeshireinsight.org.uk/* /var/www/html/
                   mv data.cambridgeshireinsight.org.uk/.htaccess /var/www/html/
@@ -92,7 +99,7 @@ resource "aws_db_instance" "cambs-insight-database" {
   engine_version         = "5.7"
   instance_class         = "db.t2.micro"
   username               = var.db_user
-  password               = var.db_password
+  password               = random_password.db_password.result
   skip_final_snapshot    = true
   tags = {
     "Application" = "Cambs-Insight"
@@ -260,4 +267,11 @@ output "private_key" {
 }
 output "ec2_ip" {
   value = aws_instance.cambs-insight-website.public_ip
+}
+output "mysql_endpoint" {
+  value = aws_db_instance.cambs-insight-database.endpoint
+}
+output "mysql_password" {
+  value = random_password.db_password.result
+  sensitive = true
 }
