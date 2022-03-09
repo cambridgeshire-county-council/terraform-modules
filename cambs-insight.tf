@@ -33,6 +33,19 @@ variable "tfstate-bucket" {
   type    = string
   default = "ccc-terraform-states"
 }
+variable "vpc-id" {
+  type    = string
+  default = "vpc-59d58c31"
+}
+variable "subnet1-id" {
+  type    = string
+  default = "subnet-c5e28dbf"
+}
+variable "subnet2-id" {
+  type    = string
+  default = "subnet-ae8b36e2"
+}
+
 
 
 resource random_password "db_password" {
@@ -211,7 +224,7 @@ resource "aws_security_group" "cambs-insight-lb-sg" {
 
 resource "aws_lb" "Cambs-Insight-lb" {
   # name = "Cambs-Insight"
-  subnets            = ["subnet-c5e28dbf", "subnet-ae8b36e2"]
+  subnets            = ["${var.subnet1-id}", "${var.subnet2-id}"]
   security_groups = [ aws_security_group.cambs-insight-lb-sg.id ]
   tags = {
     "Application" = "Cambs-Insight"
@@ -222,7 +235,7 @@ resource "aws_lb_target_group" "Cambs-Insight-http-tg" {
   # name = "Cambs-Insight-http-tg"
   port = 80
   protocol = "HTTP"
-  vpc_id = "vpc-59d58c31"
+  vpc_id = "${var.vpc-id}"
   tags = {
     "Application" = "Cambs-Insight"
   }
