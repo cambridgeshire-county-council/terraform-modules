@@ -55,7 +55,7 @@ resource random_password "db_password" {
 
 
 resource "aws_instance" "cambs-insight-website" {
-  ami                    = "ami-489f8e2c" //ami-098828924dc89ea4a latest?
+  ami                    = "ami-03e88be9ecff64781" 
   instance_type          = "t2.medium"
   vpc_security_group_ids = [aws_security_group.cambs-insight-ec2-sg.id]
   key_name               = aws_key_pair._.key_name
