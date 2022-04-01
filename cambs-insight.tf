@@ -87,6 +87,9 @@ resource "aws_instance" "cambs-insight-website" {
     device_name = "/dev/xvda"
     volume_size = 40
   }
+  lifecycle {
+   ignore_changes = [user_data]
+  }
 }
 
 resource "aws_db_instance" "cambs-insight-database" {
@@ -100,6 +103,9 @@ resource "aws_db_instance" "cambs-insight-database" {
   skip_final_snapshot    = true
   tags = {
     "Application" = "Cambs-Insight"
+  }
+  lifecycle {
+   ignore_changes = [password]
   }
 }
 
