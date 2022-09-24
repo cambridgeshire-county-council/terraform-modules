@@ -1,9 +1,9 @@
 terraform {
-  backend "s3" {
-    bucket = "${var.tfstate-bucket}"
-    key    = "cambs-insight-${var.environment}/cambs-insight.tfstate"
-    region = "eu-west-2"
-  }
+  # backend "s3" {
+  #   bucket = "${var.tfstate-bucket}"
+  #   key    = "cambs-insight-${var.environment}/cambs-insight.tfstate"
+  #   region = "eu-west-2"
+  # }
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -33,17 +33,11 @@ variable "tfstate-bucket" {
   type    = string
   default = "ccc-terraform-states"
 }
-variable "vpc-id" {
-  type    = string
-  default = "vpc-59d58c31"
+data "aws_vpc" "default" {
+  default = true
 }
-variable "subnet1-id" {
-  type    = string
-  default = "subnet-c5e28dbf"
-}
-variable "subnet2-id" {
-  type    = string
-  default = "subnet-ae8b36e2"
+data "aws_subnet_ids" "default" {
+  vpc_id = data.aws_vpc.default.id
 }
 
 
@@ -55,29 +49,29 @@ resource random_password "db_password" {
 
 
 resource "aws_instance" "cambs-insight-website" {
-  ami                    = "ami-03e88be9ecff64781" 
+  ami                    = "ami-f976839e" 
   instance_type          = "t2.medium"
   vpc_security_group_ids = [aws_security_group.cambs-insight-ec2-sg.id]
   key_name               = aws_key_pair._.key_name
-  user_data              = <<-EOF
-                  #!/bin/bash
-                  sudo su
-                  yum update -y
-                  yum -y install httpd
-                  sudo yum remove httpd-tools -y
-                  sudo yum install php56 -y
-                  sudo yum install php56-pdo -y
-                  sudo yum install php-pdo_mysql -y
-                  sudo yum install mysql -y
-                  echo "#!/bin/bash" | sudo tee /etc/profile.d/ci_setup.sh
-                  echo "MYSQL_ENDPOINT=${aws_db_instance.cambs-insight-database.address}" | sudo tee -a /etc/profile.d/ci_setup.sh
-                  echo "MYSQL_USER=${var.db_user}" | sudo tee -a /etc/profile.d/ci_setup.sh
-                  echo "MYSQL_PASSWORD=${random_password.db_password.result}" | sudo tee -a /etc/profile.d/ci_setup.sh
-                  echo "MYSQL_DBNAME=${var.db_name}" | sudo tee -a /etc/profile.d/ci_setup.sh
-                  chmod +x /etc/profile.d/ci_setup.sh
-                  chown -R apache:apache /var/www/html
-                  service httpd start
-                  EOF
+  # user_data              = <<-EOF
+  #                 #!/bin/bash
+  #                 sudo su
+  #                 yum update -y
+  #                 yum -y install httpd
+  #                 sudo yum remove httpd-tools -y
+  #                 sudo yum install php56 -y
+  #                 sudo yum install php56-pdo -y
+  #                 sudo yum install php-pdo_mysql -y
+  #                 sudo yum install mysql -y
+  #                 echo "#!/bin/bash" | sudo tee /etc/profile.d/ci_setup.sh
+  #                 echo "MYSQL_ENDPOINT=${aws_db_instance.cambs-insight-database.address}" | sudo tee -a /etc/profile.d/ci_setup.sh
+  #                 echo "MYSQL_USER=${var.db_user}" | sudo tee -a /etc/profile.d/ci_setup.sh
+  #                 echo "MYSQL_PASSWORD=${random_password.db_password.result}" | sudo tee -a /etc/profile.d/ci_setup.sh
+  #                 echo "MYSQL_DBNAME=${var.db_name}" | sudo tee -a /etc/profile.d/ci_setup.sh
+  #                 chmod +x /etc/profile.d/ci_setup.sh
+  #                 chown -R apache:apache /var/www/html
+  #                 service httpd start
+  #                 EOF
   iam_instance_profile   = aws_iam_instance_profile.cambs_insight_profile.name
   tags = {
     "Name" = "Cambs-Insight",
@@ -92,22 +86,22 @@ resource "aws_instance" "cambs-insight-website" {
   }
 }
 
-resource "aws_db_instance" "cambs-insight-database" {
-  vpc_security_group_ids = [aws_security_group.cambs-insight-rds-sg.id]
-  allocated_storage      = 5
-  engine                 = "mysql"
-  engine_version         = "5.7"
-  instance_class         = "db.t2.micro"
-  username               = var.db_user
-  password               = random_password.db_password.result
-  skip_final_snapshot    = true
-  tags = {
-    "Application" = "Cambs-Insight"
-  }
-  lifecycle {
-   ignore_changes = [password]
-  }
-}
+# resource "aws_db_instance" "cambs-insight-database" {
+#   vpc_security_group_ids = [aws_security_group.cambs-insight-rds-sg.id]
+#   allocated_storage      = 5
+#   engine                 = "mysql"
+#   engine_version         = "5.7"
+#   instance_class         = "db.t2.micro"
+#   username               = var.db_user
+#   password               = random_password.db_password.result
+#   skip_final_snapshot    = true
+#   tags = {
+#     "Application" = "Cambs-Insight"
+#   }
+#   lifecycle {
+#    ignore_changes = [password]
+#   }
+# }
 
 resource "aws_iam_policy" "cambs_insight_iam_policy" {
   # name        = "cambs_insight_iam_policy"
@@ -230,7 +224,7 @@ resource "aws_security_group" "cambs-insight-lb-sg" {
 
 resource "aws_lb" "Cambs-Insight-lb" {
   # name = "Cambs-Insight"
-  subnets            = ["${var.subnet1-id}", "${var.subnet2-id}"]
+  subnets = data.aws_subnet_ids.default.ids
   security_groups = [ aws_security_group.cambs-insight-lb-sg.id ]
   tags = {
     "Application" = "Cambs-Insight"
@@ -241,9 +235,18 @@ resource "aws_lb_target_group" "Cambs-Insight-http-tg" {
   # name = "Cambs-Insight-http-tg"
   port = 80
   protocol = "HTTP"
-  vpc_id = "${var.vpc-id}"
+  vpc_id = data.aws_vpc.default.id
   tags = {
     "Application" = "Cambs-Insight"
+  }
+  health_check {
+    path                = "/"
+    protocol            = "HTTP"
+    matcher             = "200"
+    interval            = 15
+    timeout             = 3
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
   }
 }
 
@@ -271,8 +274,12 @@ output "private_key" {
 output "ec2_ip" {
   value = aws_instance.cambs-insight-website.public_ip
 }
-output "mysql_endpoint" {
-  value = aws_db_instance.cambs-insight-database.endpoint
+# output "mysql_endpoint" {
+#   value = aws_db_instance.cambs-insight-database.endpoint
+# }
+output "alb_dns_name" {
+  value       = aws_lb.Cambs-Insight-lb.dns_name
+  description = "The domain name of the load balancer"
 }
 output "mysql_password" {
   value = random_password.db_password.result
