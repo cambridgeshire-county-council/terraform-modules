@@ -9,3 +9,6 @@ output "private_key" {
 output "ec2_ip" {
   value = aws_instance.cambs-insight-website.public_ip
 }
+output "ec2_dns_name" {
+  value = aws_instance.cambs-insight-website.public_dns
+}

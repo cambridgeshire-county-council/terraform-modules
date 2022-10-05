@@ -14,4 +14,5 @@ module "cambridgeshire-insight" {
 
   vpc_remote_state_key = "stage/vpc/terraform.tfstate"
   environment = "staging"
+  instance_size = "t2.micro"
 }

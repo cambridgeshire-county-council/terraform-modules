@@ -17,7 +17,7 @@ data "aws_subnets" "default" {
 
 resource "aws_instance" "cambs-insight-website" {
   ami                    = "ami-f976839e" 
-  instance_type          = "t2.medium"
+  instance_type          = var.instance_size
   vpc_security_group_ids = ["${data.terraform_remote_state.vpc.outputs.ec2_sg_id}"]
   key_name               = aws_key_pair._.key_name
   # user_data              = <<-EOF
