@@ -1,10 +1,3 @@
-terraform {
-  backend "s3" {
-    key = "stage/services/application-server/terraform.tfstate"
-  }
-}
-
-
 provider "aws" {
   region = "eu-west-2"
 }
