@@ -1,25 +1,9 @@
-data "terraform_remote_state" "vpc" {
-  backend = "s3"
-
-  config = {
-    bucket = "ccc-terraform-state"
-    key    = var.vpc_remote_state_key
-    region = "eu-west-2"
-  }
-}
-
-data "aws_vpc" "default" {
-  default = true
-}
-data "aws_subnets" "default" {
-  #vpc_id = data.aws_vpc.default.id
-}
-
 resource "aws_instance" "cambs-insight-website" {
   ami                    = "ami-f976839e" 
   instance_type          = var.instance_size
-  vpc_security_group_ids = ["${data.terraform_remote_state.vpc.outputs.ec2_sg_id}"]
+  vpc_security_group_ids = ["${var.ec2_sg_id}"]
   key_name               = aws_key_pair._.key_name
+  subnet_id              = "${var.subnet_id1}"
   # user_data              = <<-EOF
   #                 #!/bin/bash
   #                 sudo su
@@ -54,8 +38,8 @@ resource "aws_instance" "cambs-insight-website" {
 }
 
 resource "aws_lb" "Cambs-Insight-lb" {
-  subnets = data.aws_subnets.default.ids
-  security_groups = ["${data.terraform_remote_state.vpc.outputs.lb_sg_id}"]
+  subnets = ["${var.subnet_id1}","${var.subnet_id2}"]
+  security_groups = ["${var.lb_sg_id}"]
   tags = {
     "Application" = "Cambs-Insight"
   }
@@ -64,7 +48,7 @@ resource "aws_lb" "Cambs-Insight-lb" {
 resource "aws_lb_target_group" "Cambs-Insight-http-tg" {
   port = 80
   protocol = "HTTP"
-  vpc_id = data.aws_vpc.default.id
+  vpc_id = "${var.vpc_id}"
   tags = {
     "Application" = "Cambs-Insight"
   }

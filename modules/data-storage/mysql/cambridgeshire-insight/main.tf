@@ -1,15 +1,5 @@
-data "terraform_remote_state" "vpc" {
-  backend = "s3"
-
-  config = {
-    bucket = "ccc-terraform-state"
-    key    = var.vpc_remote_state_key
-    region = "eu-west-2"
-  }
-}
-
 resource "aws_db_instance" "cambs-insight-database" {
-  vpc_security_group_ids = ["${data.terraform_remote_state.vpc.outputs.rds_sg_id}"]
+  vpc_security_group_ids = ["${var.rds_sg_id}"]
   allocated_storage      = 5
   engine                 = "mysql"
   engine_version         = "5.7"

@@ -21,6 +21,8 @@ module "vpc" {
 resource "aws_security_group" "cambs-insight-ec2-sg" {
   name        = "${var.environment}-cambs-insight-ec2-sg"
   description = "${var.environment} EC2 Security Group for Cambs Insight"
+  vpc_id = module.vpc.vpc_id
+
   ingress {
     from_port   = 22
     to_port     = 22
@@ -48,9 +50,12 @@ resource "aws_security_group" "cambs-insight-ec2-sg" {
     Environment = "${var.environment}"
   }
 }
+
 resource "aws_security_group" "cambs-insight-lb-sg" {
   name = "${var.environment}-cambs-insight-lb-sg"
   description = "${var.environment} load balancer group for Cambs Insight"
+  vpc_id = module.vpc.vpc_id
+
   ingress {
     from_port   = 80
     to_port     = 80
@@ -81,6 +86,7 @@ resource "aws_security_group" "cambs-insight-lb-sg" {
 resource "aws_security_group" "cambs-insight-rds-sg" {
   name        = "${var.environment}-cambs-insight-rds-sg"
   description = "${var.environment} RDS Security Group for Cambs Insight"
+  vpc_id = module.vpc.vpc_id
 
   ingress {
     from_port       = 3306

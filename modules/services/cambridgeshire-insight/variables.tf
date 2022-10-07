@@ -13,3 +13,29 @@ variable "instance_size" {
   type = string
   default = "t2.medium"
 }
+
+variable "ec2_sg_id" {
+  type = string
+  description = "The id of the EC2 security group"
+}
+
+variable "lb_sg_id" {
+  type = string
+  description = "The id of the Load Balancer security group"
+}
+
+variable "vpc_id" {
+  type = string
+  description = "The id of the VPC"
+}
+
+variable "subnet_id1" {
+  type = string
+  description = "The id of the first subnet"
+}
+
+variable "subnet_id2" {
+  type = string
+  description = "The id of the second subnet"
+}
+
