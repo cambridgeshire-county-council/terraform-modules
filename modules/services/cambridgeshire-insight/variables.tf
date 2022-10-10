@@ -1,3 +1,9 @@
+variable "server_name" {
+    description = "The name of the server in AWS"
+    type = string
+    default = "Cambridgeshire Insight"
+}
+
 variable "vpc_remote_state_key" {
     description = "The Terraform state describing VPC and security groups"
     type = string
@@ -38,4 +44,5 @@ variable "subnet_id2" {
   type = string
   description = "The id of the second subnet"
 }
+
 
