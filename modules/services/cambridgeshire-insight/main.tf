@@ -25,7 +25,7 @@ resource "aws_instance" "cambs-insight-website" {
   #                 EOF
   iam_instance_profile   = aws_iam_instance_profile.cambs_insight_profile.name
   tags = {
-    "Name" = "${server_name}",
+    "Name" = "${var.server_name}",
     "Application" = "Cambs-Insight"
   }
   ebs_block_device {
